@@ -71,10 +71,10 @@ function App() {
                  'stops': LayerStyles.heights[selectedItem]
             },
               'fill-extrusion-opacity': 1,
-              'fill-extrusion-height-transition':{
-                duration: 2000,
-                delay: 0
-            },
+            //   'fill-extrusion-height-transition':{
+            //     duration: 2000,
+            //     delay: 0
+            // },
             }}
           />
         
@@ -82,13 +82,17 @@ function App() {
       )}
 
         <Source id="src-labels" type="geojson" data={labelsData}>
+       
           <Layer
-            id="labels"
+            id="label1"
             type="symbol"
             layout={{
               "text-field": ["get", "NAME_1"],
-              "text-size": 14,
-              "text-offset": [0, -2],
+              "text-size": 14, 
+              "text-justify": 'right',
+              "text-offset": [0, 0],
+              "text-ignore-placement": true,
+              //"symbol-sort-key":1
             }}
             paint={{
               "text-color": "white",
@@ -96,6 +100,25 @@ function App() {
               "text-halo-width": 3,
             }}
           />
+
+<Layer
+            id="label2"
+            type="symbol"
+            layout={{
+              "text-field": ["get", selectedItem],
+              "text-size": 14, 
+              "text-justify": 'left',
+              "text-offset": [0, 1],
+              "text-ignore-placement": true,
+             // "symbol-sort-key":5
+            }}
+            paint={{
+              "text-color": "white",
+              "text-halo-color": "rgba(0,0,0,0.9)",
+              "text-halo-width": 3,
+            }}
+          />
+          
         </Source>
 
 
