@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import Map, {Source, Layer, NavigationControl} from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import layer from './data/pakstats.geojson' ;
+import pdata from './data/points.geojson';
 //import LegendControl from 'mapboxgl-legend';
 import 'mapboxgl-legend/dist/style.css'
 import Legend from './components/Legend';
@@ -13,6 +14,7 @@ function App() {
 
   //const [geoJSONData, setGeoJSONData] = useState(null);
   let geoJSONData = layer; 
+  let labelsData= pdata;
   const [selectedItem, setSelectedItem] = useState('Population')
 
 
@@ -21,7 +23,7 @@ function App() {
     <div style={{height:20, position: 'absolute', zIndex: 10, backgroundColor: 'white'}}>
      <h2 style={{textAlign: 'center', backgroundColor: 'white'}}>3D Extrusion based on Provincial Statistics</h2>
     </div>
-    <Toggle setSelectedItem={setSelectedItem}/>
+    <Toggle setSelectedItem={setSelectedItem} selectedItem={selectedItem}/>
     <Legend selectedItem={selectedItem}/>
     
     
@@ -69,11 +71,33 @@ function App() {
                  'stops': LayerStyles.heights[selectedItem]
             },
               'fill-extrusion-opacity': 1,
+              'fill-extrusion-height-transition':{
+                duration: 2000,
+                delay: 0
+            },
             }}
           />
         
         </Source>
       )}
+
+        <Source id="src-labels" type="geojson" data={labelsData}>
+          <Layer
+            id="labels"
+            type="symbol"
+            layout={{
+              "text-field": ["get", "NAME_1"],
+              "text-size": 14,
+              "text-offset": [0, -2],
+            }}
+            paint={{
+              "text-color": "white",
+              "text-halo-color": "rgba(0,0,0,0.9)",
+              "text-halo-width": 3,
+            }}
+          />
+        </Source>
+
 
 
 {/*

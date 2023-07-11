@@ -1,4 +1,4 @@
-const Toggle = ({setSelectedItem}) =>
+const Toggle = ({setSelectedItem, selectedItem}) =>
 {
     
     return (
@@ -8,10 +8,14 @@ const Toggle = ({setSelectedItem}) =>
             <div className="radio">
                 <div>
                 <label>
-                    <input type='radio' name='stat' label='Population' value='Population' onClick={() => setSelectedItem('Population')}    />
+                    <input checked={selectedItem ==='Population' && true} type='radio' name='stat' label='Population' value='Population' onClick={() => setSelectedItem('Population')}    />
                     Population
                 </label>
-               
+                {/* {
+                    selectedItem === 'Population' &&
+                    <label>1234123543</label>
+                } */}
+                
                 </div>
                 <div>
                 <label>
