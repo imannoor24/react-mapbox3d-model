@@ -2,7 +2,7 @@ const Toggle = ({setSelectedItem}) =>
 {
     
     return (
-        <div style={{position:'absolute', bottom:230, right:15, backgroundColor:'white', height:210, width: 200, zIndex:1}}>
+        <div style={{position:'absolute', bottom:260, right:15, backgroundColor:'white', height:210, width: 200, zIndex:1}}>
             <p style={{textAlign:'center', fontSize:20, fontWeight:'bold'}}>Statistical Parameters</p>
 
             <div className="radio">
