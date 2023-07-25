@@ -1,39 +1,156 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import Map, {Source, Layer, NavigationControl} from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import layer from './data/pakstats.geojson' ;
-import pdata from './data/points.geojson';
+import pdata from './data/points';
 //import LegendControl from 'mapboxgl-legend';
 import 'mapboxgl-legend/dist/style.css'
 import Legend from './components/Legend';
 import Toggle from './components/toggle';
 import LayerStyles from './data/LayerStyles';
 import mapboxgl from 'mapbox-gl';
+import geojsonValidation from 'geojson-validation';
+import axios from 'axios';
+import { parse } from 'wellknown';
+import redp from './data/red.png';
+import greenp from './data/green.png';
+import bluep from './data/blue.png';
 
 
-  // eslint-disable-next-line import/no-webpack-loader-syntax
+
+
+// eslint-disable-next-line import/no-webpack-loader-syntax
   mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
 
 function App() {
 
-  //const [geoJSONData, setGeoJSONData] = useState(null);
-  let geoJSONData = layer; 
-  let labelsData= pdata;
-
-
-
-
   const [selectedItem, setSelectedItem] = useState('Population')
+  // const[eduItem, setEduItem] = useState('School')
+
+  const [wkt, setWkt] = useState('');
+  const [geojson, setGeojson] = useState({
+      type: "FeatureCollection",
+      features: []
+  });
+
+  const [ewkt, setEwkt] = useState('');
+  const [egeojson, setEgeojson] = useState ({
+    type: "FeatureCollection",
+    features:[]
+  });
+
+  useEffect( () => {
+    axios.get(`http://localhost:5000/api?p=${selectedItem}`).then(response =>
+     {console.log(response.data)
+        setWkt(response.data)
+    }
+     )
+   //  setData(response.data).catch((error) => console.error('Error fetching data: ', error));
+    .catch((error) => console.error('Error fetching WKT data:', error));
+}, [selectedItem]);
+
+useEffect(() => {
+  axios.get(`http://localhost:5001/edudata`).then(response =>
+    {
+      console.log(response.data)
+      setEwkt(response.data)
+    }
+  )
+  .catch((error) => console.error('Error fetching EWKT data:', error));
+}, []); 
+
+useEffect ( () => {
+
+  console.log('wkt', wkt)
+  let features = []
+  for (let i=0; i< wkt.length; i++){
+
+          const  feature = {
+              type: "Feature",
+              geometry: parse(wkt[i].geom),
+              properties: {
+                  gid: wkt[i].gid,
+                  name_0 : wkt[i].name_0,
+                  name_1: wkt[i].name_1,
+                  param: wkt[i].param,
+                  value: wkt[i].value,
+                  stops:wkt[i].stops
+              }
+          }
+                    
+
+          features.push(feature)  
+  }
+
+  setGeojson({
+      type: 'FeatureCollection',
+      features: features
+  })
+
+}, [wkt])
 
 
+useEffect(() => {
+  let features = []
+  for (let i=0; i< ewkt.length; i++){
 
-  return (<div style={{backgroundColor:'#EEEEEE', width:'100vw', height:'100vh', position:'fixed',top: 0, left: 0}} >
+          const  feature = {
+              type: "Feature",
+              geometry: parse(ewkt[i].geom),
+              properties: {
+                  ogc_fid: ewkt[i].ogc_fid,
+                  osm_id : ewkt[i].osm_id,
+                  name : ewkt[i].name,
+                  type: ewkt[i].type
+              }
+          }
+      
+          features.push(feature)  
+  }
+
+  setEgeojson({
+      type: 'FeatureCollection',
+      features: features
+  })
+
+}, [ewkt]);
+
+
+useEffect(() => {
+  console.log('out geojson', JSON.stringify(geojson))
+}, [geojson]);
+
+useEffect(() => {
+  console.log('out geojson for point data ', JSON.stringify(egeojson))
+}, [egeojson]);
+
+
+useEffect(() => 
+{
+  
+  let validationMessage;
+
+  try {
+    validationMessage = geojsonValidation.valid(egeojson)
+      ? 'Valid GeoJSON'
+      : 'Invalid GeoJSON';
+  } catch (error) {
+    validationMessage = 'Invalid JSON format';
+  }
+  console.log('GeoJSON Validation here -> ',validationMessage);
+}, [egeojson]); 
+
+
+ 
+  let geoJSONData = geojson; 
+  let labelsData= pdata;
+  let edata =egeojson;
+  
+  return ( <div style={{backgroundColor:'#EEEEEE', width:'100vw', height:'100vh', position:'fixed',top: 0, left: 0}} >
     <div style={{height:20, position: 'absolute', zIndex: 10, backgroundColor: 'white'}}>
      <h2 style={{textAlign: 'center', backgroundColor: 'white'}}>3D Extrusion based on Provincial Statistics</h2>
     </div>
-    <Toggle setSelectedItem={setSelectedItem} selectedItem={selectedItem}/>
+    <Toggle setSelectedItem={setSelectedItem} selectedItem={selectedItem} geoJSONData={geoJSONData}/>
     <Legend selectedItem={selectedItem}/>
-    
     
      <Map
     mapboxAccessToken='pk.eyJ1IjoiYXJmYWtsIiwiYSI6ImNsYnQzd284eDA5OGUzcHBmc2VjOTJ4dzEifQ.RFRiN_WHNN8c4zO7nt2XLA'
@@ -43,13 +160,11 @@ function App() {
             zoom:4.8,
             pitch: 40
         }}
-       //style={{width: 1525, height:650 }}
        style={{width:'100%', height:'100%'}}
         mapStyle="mapbox://styles/mapbox/light-v11"
     >
 
 
-        
     {geoJSONData && (
         <Source type="geojson" data={geoJSONData}>
           <Layer
@@ -60,7 +175,7 @@ function App() {
               'fill-extrusion-color': 
               [
                 'match',
-                ['get', 'NAME_1'],
+                ['get', 'name_1'],
                 'Punjab', '#AAC8A7',
                 'Sind',  '#F1F7B5',
                 'Baluchistan', '#93BFCF',
@@ -75,8 +190,11 @@ function App() {
               ,
             'fill-extrusion-height': {
                  // ['get', 'Population'],
-                 'property': selectedItem,
+                 'property': "value",
                  'stops': LayerStyles.heights[selectedItem]
+                // 'property':[geoJSONData.features[0].properties.param],
+                // 'stops': [geoJSONData.features[0].properties.value, geoJSONData.features[0].properties.stops]
+
             },
               'fill-extrusion-opacity': 1,
             //   'fill-extrusion-height-transition':{
@@ -100,7 +218,7 @@ function App() {
               "text-justify": 'right',
               "text-offset": [0, 0],
               "text-ignore-placement": true,
-              //"symbol-sort-key":1
+              "symbol-sort-key":1
             }}
             paint={{
               "text-color": "white",
@@ -109,7 +227,7 @@ function App() {
             }}
           />
 
-<Layer
+          <Layer
             id="label2"
             type="symbol"
             layout={{
@@ -118,7 +236,7 @@ function App() {
               "text-justify": 'left',
               "text-offset": [0, 1],
               "text-ignore-placement": true,
-             // "symbol-sort-key":5
+              "symbol-sort-key":5
             }}
             paint={{
               "text-color": "white",
@@ -126,50 +244,29 @@ function App() {
               "text-halo-width": 3,
             }}
           />
-          
-        </Source>
+           </Source>
 
+          <Source id="edudata" type="geojson" data={edata}>
+            <Layer
+            
+                id="education"
+                type="circle"
+                // layout={{
+                //   'icon-image' : redp,
+                //   'icon-size': 1,
+                //   'icon-allow-overlap': true
 
-
-{/*
-      {geoJSONData && (
-              <Source type="geojson" data={geoJSONData}>
-                <Layer
-                  id="my-geojson-layer2"
-                  type="fill-extrusion"
-                  paint={{
-
-                    'fill-extrusion-color': [
-                      'interpolate',
-                      ['linear'],
-                      ['get', 'Hospitals'],
-                      5, '#DDE6ED',
-                      50, '#9DB2BF',
-                      65, '#526D82',
-                      200, '#27374D',
-                      400, '#0B2447'
-                    ],
-                  'fill-extrusion-height': {
-                      'property': 'Hospitals',
-                      'stops': [
-                      [5, 20000],
-                      [50,75000],
-                      [65,90000],
-                      [200, 120000],
-                      [350, 250000]]
-                  },
-                    'fill-extrusion-opacity': 0.9,
-                  }}
-                />
-              
-              </Source>
-            )}
-                */}
-
+                // }}
+                paint = {{
+                  'circle-radius':2,
+                  'circle-color': 'blue'
+                }}
+            />
+          </Source>
 
       <NavigationControl />
     </Map> 
 </div>);
-}
+};
 
 export default App;
